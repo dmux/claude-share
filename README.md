@@ -1,4 +1,13 @@
-# claude-share
+<p align="center">
+  <img src="https://dmux.github.io/claude-share/logo.svg" alt="claude-share" width="112" height="112" />
+</p>
+
+<h1 align="center">claude-share</h1>
+
+<p align="center">
+  <a href="https://dmux.github.io/claude-share/"><b>Website</b></a> ·
+  <a href="https://github.com/dmux/claude-share/releases/latest"><b>Releases</b></a>
+</p>
 
 Share **one machine's authenticated Claude Code installation** with other
 developers on an **internal network**, over an **end-to-end encrypted**
