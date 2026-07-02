@@ -110,7 +110,10 @@
 
   /* Diagram panel */
   .panel { border-radius: var(--radius); border: 1px solid var(--border); background: var(--panel); padding: 30px; margin-top: 40px; }
-  .mermaid { display: flex; justify-content: center; }
+  .mermaid { display: block; text-align: center; overflow-x: auto; min-height: 60px; }
+  .mermaid svg { max-width: 100%; height: auto; }
+  .diagram-caption { text-align: center; color: var(--muted); font-size: .9rem; margin-top: 18px; }
+  .diagram-caption b { color: var(--cyan); }
 
   /* Security list */
   .sec-grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 28px; margin-top: 44px; align-items: start; }
@@ -171,7 +174,7 @@
     </div>
 
     <div class="terminal reveal">
-      <div class="bar"><span class="r"></span><span class="y"></span><span class="g"></span><span class="title">claude-share-client — ~/projects/api</span></div>
+      <div class="bar"><span class="r"></span><span class="y"></span><span class="g"></span></div>
 <pre class="mono"><span class="tok-c"># set the shared secret, point at the server, run in your project</span>
 <span class="tok-p">$</span> <span class="tok-cmd">CLAUDE_SHARE_TOKEN=•••• claude-share-client --server ws://192.168.1.50:8443/ws</span>
 <span class="tok-c">•</span> Uploading project (128 files)...
@@ -195,23 +198,22 @@
     <div class="panel reveal">
       <div class="mermaid">
 flowchart LR
-    subgraph client["🖥️ client (your project)"]
-        C1["build manifest"]
-        C2["upload missing files"]
-        C3["prompt (REPL)"]
-        C4["apply file changes"]
+    subgraph C["client — your project"]
+      direction TB
+      C1["build manifest"] --> C2["upload changed files"]
+      C3["prompt · REPL"]
+      C4["apply file changes"]
     end
-    subgraph server["☁️ server (claude + auth)"]
-        S1["isolated workspace"]
-        S2["claude -p · stream-json"]
-        S3["diff → push changes"]
+    subgraph S["server — claude + auth"]
+      direction TB
+      S1["isolated workspace"] --> S2["claude -p · stream-json"] --> S3["diff → push changes"]
     end
-    C2 -- "① blobs" --> S1
-    C3 -- "② prompt" --> S2
-    S2 -- "③ stream events" --> C3
-    S3 -- "④ file changes" --> C4
-    client <== "Noise E2E encrypted WebSocket" ==> server
+    C2 -->|"① blobs"| S1
+    C3 -->|"② prompt"| S2
+    S2 -->|"③ stream events"| C3
+    S3 -->|"④ file changes"| C4
       </div>
+      <p class="diagram-caption">All traffic flows over a <b>Noise end-to-end encrypted WebSocket</b>.</p>
     </div>
   </div>
 </section>
@@ -262,7 +264,9 @@ flowchart TB
     APP --> PORTS
     CLIENTAPP --> PORTS
     WS --> NOISE
-    adapters -. implement .-> PORTS
+    WS -. implements .-> PORTS
+    AGENT -. implements .-> PORTS
+    FSSTORE -. implements .-> PORTS
     PORTS --> DOMAIN
       </div>
     </div>
@@ -334,20 +338,28 @@ make build   # -> bin/claude-share-server, bin/claude-share-client</code></pre>
 <script type="module">
   import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
   mermaid.initialize({
-    startOnLoad: true,
+    startOnLoad: false,
     theme: 'base',
+    securityLevel: 'loose',
+    flowchart: { htmlLabels: true, useMaxWidth: true, curve: 'basis', nodeSpacing: 55, rankSpacing: 70, padding: 16 },
     themeVariables: {
       background: 'transparent',
-      primaryColor: 'rgba(129,140,248,0.12)',
+      primaryColor: 'rgba(129,140,248,0.14)',
       primaryBorderColor: 'rgba(129,140,248,0.55)',
       primaryTextColor: '#e8e9f0',
-      lineColor: '#7c83a8',
-      fontFamily: 'JetBrains Mono, monospace',
+      lineColor: '#8b93bf',
+      tertiaryColor: 'rgba(34,211,238,0.10)',
+      fontFamily: "'Inter', system-ui, sans-serif",
       fontSize: '14px',
-      clusterBkg: 'rgba(255,255,255,0.02)',
-      clusterBorder: 'rgba(255,255,255,0.10)'
+      clusterBkg: 'rgba(255,255,255,0.025)',
+      clusterBorder: 'rgba(255,255,255,0.12)'
     }
   });
+  // Render only after web fonts are ready, so Mermaid measures text width with
+  // the real font (prevents labels overflowing their node boxes / overlap).
+  const fontsReady = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
+  await Promise.race([fontsReady, new Promise((r) => setTimeout(r, 1500))]);
+  await mermaid.run({ querySelector: '.mermaid' });
 </script>
 <script>
   // Scroll reveal
