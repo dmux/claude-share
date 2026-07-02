@@ -8,6 +8,8 @@
 <meta property="og:title" content="claude-share" />
 <meta property="og:description" content="Share a local Claude Code instance over an end-to-end encrypted WebSocket on your internal network." />
 <meta property="og:type" content="website" />
+<meta property="og:image" content="https://dmux.github.io/claude-share/logo.svg" />
+<link rel="icon" type="image/svg+xml" href="logo.svg" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -59,7 +61,7 @@
     background: rgba(7,7,12,.6); border-bottom: 1px solid var(--border); }
   nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 66px; }
   .brand { display: flex; align-items: center; gap: 11px; font-weight: 800; letter-spacing: -.02em; font-size: 1.05rem; }
-  .brand .dot { width: 22px; height: 22px; border-radius: 7px; background: var(--grad); box-shadow: 0 0 22px rgba(129,140,248,.6); }
+  .brand .logo { width: 26px; height: 26px; border-radius: 8px; box-shadow: 0 0 22px rgba(129,140,248,.5); display: block; }
   .nav-links { display: flex; gap: 28px; align-items: center; font-size: .93rem; color: var(--muted); font-weight: 500; }
   .nav-links a:hover { color: var(--text); }
   .nav-cta { padding: 9px 16px; border-radius: 10px; background: var(--panel); border: 1px solid var(--border); color: var(--text); font-weight: 600; }
@@ -152,7 +154,7 @@
 
 <nav>
   <div class="wrap">
-    <a class="brand" href="#top"><span class="dot"></span> claude-share</a>
+    <a class="brand" href="#top"><img class="logo" src="logo.svg" alt="" width="26" height="26" /> claude-share</a>
     <div class="nav-links">
       <a href="#how">How it works</a>
       <a href="#features">Features</a>
@@ -328,7 +330,7 @@ make build   # -> bin/claude-share-server, bin/claude-share-client</code></pre>
 
 <footer>
   <div class="wrap">
-    <div><span class="brand" style="font-size:1rem"><span class="dot" style="width:16px;height:16px"></span> claude-share</span></div>
+    <div><span class="brand" style="font-size:1rem"><img class="logo" src="logo.svg" alt="" style="width:20px;height:20px" /> claude-share</span></div>
     <div>MIT-spirited internal tooling · <a href="https://github.com/dmux/claude-share" style="color:var(--cyan)">github.com/dmux/claude-share</a></div>
   </div>
 </footer>
