@@ -1,0 +1,69 @@
+name: release
+
+# Build cross-platform release binaries and publish them to a GitHub Release
+# whenever a semver tag (e.g. v1.2.3) is pushed.
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: build ${{ matrix.goos }}/${{ matrix.goarch }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { goos: linux, goarch: amd64 }
+          - { goos: linux, goarch: arm64 }
+          - { goos: darwin, goarch: amd64 }
+          - { goos: darwin, goarch: arm64 }
+          - { goos: windows, goarch: amd64 }
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+          check-latest: true
+
+      - name: Build binaries
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: "0"
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME}"
+          ext=""
+          if [ "$GOOS" = "windows" ]; then ext=".exe"; fi
+          outdir="dist/claude-share_${version}_${GOOS}_${GOARCH}"
+          mkdir -p "$outdir"
+          ldflags="-s -w"
+          go build -trimpath -ldflags "$ldflags" -o "$outdir/claude-share-server$ext" ./cmd/server
+          go build -trimpath -ldflags "$ldflags" -o "$outdir/claude-share-client$ext" ./cmd/client
+          cp README.md "$outdir/"
+
+      - name: Package archive
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME}"
+          base="claude-share_${version}_${{ matrix.goos }}_${{ matrix.goarch }}"
+          cd dist
+          if [ "${{ matrix.goos }}" = "windows" ]; then
+            zip -r "${base}.zip" "$base"
+          else
+            tar -czf "${base}.tar.gz" "$base"
+          fi
+
+      - name: Publish to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.tar.gz
+            dist/*.zip
+          fail_on_unmatched_files: false
