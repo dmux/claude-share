@@ -6,6 +6,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -16,6 +17,7 @@ import (
 	"github.com/dmux/claude-share/internal/adapters/transport/ws"
 	"github.com/dmux/claude-share/internal/core/clientapp"
 	"github.com/dmux/claude-share/internal/protocol"
+	"github.com/dmux/claude-share/internal/version"
 )
 
 func main() {
@@ -24,7 +26,13 @@ func main() {
 	name := flag.String("name", "", "project name (defaults to the directory name)")
 	maxFile := flag.Int64("max-file-size", 25<<20, "reject files larger than this many bytes (0 = unlimited)")
 	maxTotal := flag.Int64("max-total-size", 500<<20, "reject a project larger than this many bytes (0 = unlimited)")
+	showVersion := flag.Bool("version", false, "print version and exit")
 	flag.Parse()
+
+	if *showVersion {
+		fmt.Printf("claude-share-client %s\n", version.Version)
+		return
+	}
 
 	token := os.Getenv("CLAUDE_SHARE_TOKEN")
 	if token == "" {

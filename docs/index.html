@@ -283,6 +283,7 @@ flowchart TB
       <ul class="sec-list reveal">
         <li><span class="chk">✓</span><span><b>Forward secrecy</b> — <span class="d">ephemeral X25519 keys per connection.</span></span></li>
         <li><span class="chk">✓</span><span><b>Mutual authentication</b> — <span class="d">a peer without the shared token can't complete the handshake; MITM is rejected.</span></span></li>
+        <li><span class="chk">✓</span><span><b>Strong tokens by default</b> — <span class="d">unset <code>CLAUDE_SHARE_TOKEN</code> and the server generates a Bitwarden-style passphrase (~77 bits, <code>crypto/rand</code>) and prints it at startup.</span></span></li>
         <li><span class="chk">✓</span><span><b>Tamper-evident</b> — <span class="d">a single flipped byte fails AEAD decryption and drops the connection.</span></span></li>
         <li><span class="chk">✓</span><span><b>Loopback by default</b> — <span class="d">binding a non-loopback address requires <code>--allow-public</code>.</span></span></li>
         <li><span class="chk">✓</span><span><b>Hardened I/O</b> — <span class="d">path-traversal blocked, blob content hash-verified, file/total/session limits.</span></span></li>
@@ -296,7 +297,7 @@ flowchart TB
   <div class="wrap">
     <div class="eyebrow reveal">Quickstart</div>
     <h2 class="reveal">Two processes, one shared secret.</h2>
-    <p class="lead reveal">Set <code>CLAUDE_SHARE_TOKEN</code> to the same value on both ends. The server machine needs <code>claude</code> installed and logged in.</p>
+    <p class="lead reveal">The two ends share one secret, <code>CLAUDE_SHARE_TOKEN</code>. Leave it unset on the server and it prints a generated passphrase to copy to each client — or set your own on both ends. The server machine needs <code>claude</code> installed and logged in.</p>
     <div class="steps">
       <div class="step reveal">
         <div class="head"><span class="num">1</span><h3>Server — on the machine with Claude</h3></div>
@@ -331,7 +332,7 @@ make build   # -> bin/claude-share-server, bin/claude-share-client</code></pre>
 <footer>
   <div class="wrap">
     <div><span class="brand" style="font-size:1rem"><img class="logo" src="logo.svg" alt="" style="width:20px;height:20px" /> claude-share</span></div>
-    <div>MIT-spirited internal tooling · <a href="https://github.com/dmux/claude-share" style="color:var(--cyan)">github.com/dmux/claude-share</a></div>
+    <div>MIT-spirited internal tooling · <a href="https://github.com/dmux/claude-share" style="color:var(--cyan)">github.com/dmux/claude-share</a> · <a href="https://github.com/dmux/claude-share/blob/main/CHANGELOG.md" style="color:var(--cyan)">Changelog</a> · <span style="opacity:.7">v0.1.1</span></div>
   </div>
 </footer>
 

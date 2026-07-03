@@ -6,7 +6,8 @@
 
 <p align="center">
   <a href="https://dmux.github.io/claude-share/"><b>Website</b></a> ·
-  <a href="https://github.com/dmux/claude-share/releases/latest"><b>Releases</b></a>
+  <a href="https://github.com/dmux/claude-share/releases/latest"><b>Releases</b></a> ·
+  <a href="CHANGELOG.md"><b>Changelog</b></a>
 </p>
 
 Share **one machine's authenticated Claude Code installation** with other
@@ -105,20 +106,30 @@ authenticated (`claude` once interactively, or `ANTHROPIC_API_KEY`).
 
 ## Run
 
-Pick a shared secret and set it on **both** ends via `CLAUDE_SHARE_TOKEN`.
+The channel is authenticated by a shared secret (`CLAUDE_SHARE_TOKEN`) that must
+match on **both** ends. If you don't set one on the server, it generates a
+strong, Bitwarden-style passphrase for you and prints it at startup — copy that
+value to each client. Set the env var yourself instead when you need a
+reproducible or scripted secret.
 
 **Server** (on the machine with Claude):
 
 ```sh
+# Bind to a LAN address so clients can reach it (internal network only).
+# With no CLAUDE_SHARE_TOKEN set, the server prints a generated share token:
+bin/claude-share-server --addr 192.168.1.50:8443 --allow-public
+#   → [claude-share] no CLAUDE_SHARE_TOKEN set — generated a share token for this run:
+#   →     radiance-scoreless-attentive-finishing-putdown-immovable
+
+# Or set your own secret explicitly (must match every client):
 export CLAUDE_SHARE_TOKEN='choose-a-strong-secret'
-# Bind to a LAN address so clients can reach it (internal network only):
 bin/claude-share-server --addr 192.168.1.50:8443 --allow-public
 ```
 
 **Client** (on each developer's machine, from any project directory):
 
 ```sh
-export CLAUDE_SHARE_TOKEN='choose-a-strong-secret'   # must match the server
+export CLAUDE_SHARE_TOKEN='the-token-the-server-printed'   # must match the server
 bin/claude-share-client --server ws://192.168.1.50:8443/ws --dir .
 ```
 
@@ -136,6 +147,7 @@ session.
 | `--permission-mode` | `acceptEdits` | passed to `claude` |
 | `--max-sessions` | `8` | concurrent session cap (0 = unlimited) |
 | `--claude-bin` | `claude` | path to the claude executable |
+| `--version` | — | print version and exit |
 
 | Client | Default | Meaning |
 |---|---|---|
@@ -144,6 +156,7 @@ session.
 | `--name` | dir name | project name |
 | `--max-file-size` | 25 MiB | reject larger files |
 | `--max-total-size` | 500 MiB | reject larger projects |
+| `--version` | — | print version and exit |
 
 Add a `.claudeshareignore` (same syntax as `.gitignore`) to exclude extra paths.
 

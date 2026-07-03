@@ -6,19 +6,24 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
 
 	"github.com/dmux/claude-share/internal/adapters/agent/claudecli"
+	"github.com/dmux/claude-share/internal/adapters/crypto/passphrase"
 	"github.com/dmux/claude-share/internal/adapters/transport/ws"
 	"github.com/dmux/claude-share/internal/adapters/workspace/fsstore"
 	"github.com/dmux/claude-share/internal/core/app"
 	"github.com/dmux/claude-share/internal/core/ports"
+	"github.com/dmux/claude-share/internal/version"
 )
 
 func main() {
@@ -31,15 +36,29 @@ func main() {
 	claudeBin := flag.String("claude-bin", "claude", "path to the claude executable")
 	permMode := flag.String("permission-mode", "acceptEdits", "claude --permission-mode")
 	maxSessions := flag.Int("max-sessions", 8, "max concurrent sessions (0 = unlimited)")
+	showVersion := flag.Bool("version", false, "print version and exit")
 	flag.Parse()
 
+	if *showVersion {
+		fmt.Printf("claude-share-server %s\n", version.Version)
+		return
+	}
+
 	token := os.Getenv("CLAUDE_SHARE_TOKEN")
+	generated := false
 	if token == "" {
-		log.Fatal("CLAUDE_SHARE_TOKEN must be set (shared secret for the encrypted channel)")
+		t, err := passphrase.Generate(passphrase.DefaultWords)
+		if err != nil {
+			log.Fatalf("generate share token: %v", err)
+		}
+		token, generated = t, true
 	}
 	psk, err := ws.PSKFromToken(token)
 	if err != nil {
 		log.Fatalf("derive PSK: %v", err)
+	}
+	if generated {
+		printTokenBanner(os.Stderr, token)
 	}
 
 	blobs, err := fsstore.NewBlobStore(filepath.Join(*dataDir, "objects"))
@@ -81,6 +100,92 @@ func main() {
 		log.Fatalf("serve: %v", err)
 	}
 	log.Println("shut down")
+}
+
+// ANSI styles used by the token banner. Emitted only when the output is a TTY
+// and NO_COLOR is unset.
+const (
+	ansiReset = "\033[0m"
+	ansiBold  = "\033[1m"
+	ansiDim   = "\033[2m"
+	ansiToken = "\033[1;36m"     // bold cyan — the passphrase itself
+	ansiFrame = "\033[38;5;244m" // gray — the box border
+)
+
+// printTokenBanner renders the generated share token inside a framed, centered
+// box so it stands out in the console instead of scrolling past as log lines.
+// Color is applied only when f is a terminal (and NO_COLOR is unset).
+func printTokenBanner(f *os.File, token string) {
+	fmt.Fprint(f, renderTokenBanner(token, useColor(f)))
+}
+
+// renderTokenBanner builds the framed banner as a string. When color is false
+// the output is plain ASCII/box-drawing text with no escape sequences.
+func renderTokenBanner(token string, color bool) string {
+	paint := func(s, code string) string {
+		if !color || code == "" || s == "" {
+			return s
+		}
+		return code + s + ansiReset
+	}
+
+	type line struct {
+		text   string
+		code   string
+		center bool
+	}
+	lines := []line{
+		{text: "claude-share · generated share token", code: ansiBold},
+		{},
+		{text: token, code: ansiToken, center: true},
+		{},
+		{text: "No CLAUDE_SHARE_TOKEN was set, so one was generated for this run.", code: ansiDim},
+		{text: "Set CLAUDE_SHARE_TOKEN to the value above on every client to connect.", code: ansiDim},
+	}
+
+	width := 0
+	for _, l := range lines {
+		if n := utf8.RuneCountInString(l.text); n > width {
+			width = n
+		}
+	}
+	const padX = 3
+	inner := width + padX*2
+
+	var b strings.Builder
+	b.WriteByte('\n')
+	b.WriteString(paint("╭"+strings.Repeat("─", inner)+"╮", ansiFrame))
+	b.WriteByte('\n')
+	for _, l := range lines {
+		vis := utf8.RuneCountInString(l.text)
+		left := padX
+		if l.center {
+			left = padX + (inner-2*padX-vis)/2
+		}
+		right := inner - left - vis
+		b.WriteString(paint("│", ansiFrame))
+		b.WriteString(strings.Repeat(" ", left))
+		b.WriteString(paint(l.text, l.code))
+		b.WriteString(strings.Repeat(" ", right))
+		b.WriteString(paint("│", ansiFrame))
+		b.WriteByte('\n')
+	}
+	b.WriteString(paint("╰"+strings.Repeat("─", inner)+"╯", ansiFrame))
+	b.WriteString("\n\n")
+	return b.String()
+}
+
+// useColor reports whether ANSI styling should be applied to f: true only when
+// f is a terminal and the NO_COLOR convention is not requesting plain output.
+func useColor(f *os.File) bool {
+	if os.Getenv("NO_COLOR") != "" {
+		return false
+	}
+	info, err := f.Stat()
+	if err != nil {
+		return false
+	}
+	return info.Mode()&os.ModeCharDevice != 0
 }
 
 func defaultDataDir() string {
