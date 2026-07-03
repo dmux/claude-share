@@ -43,7 +43,7 @@ jobs:
           if [ "$GOOS" = "windows" ]; then ext=".exe"; fi
           outdir="dist/claude-share_${version}_${GOOS}_${GOARCH}"
           mkdir -p "$outdir"
-          ldflags="-s -w"
+          ldflags="-s -w -X github.com/dmux/claude-share/internal/version.Version=${version#v}"
           go build -trimpath -ldflags "$ldflags" -o "$outdir/claude-share-server$ext" ./cmd/server
           go build -trimpath -ldflags "$ldflags" -o "$outdir/claude-share-client$ext" ./cmd/client
           cp README.md "$outdir/"
